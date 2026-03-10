@@ -7,11 +7,11 @@ RUN pip3 install --no-cache-dir yt-dlp --break-system-packages
 WORKDIR /app
 
 # Install dependencies
-COPY package.json package-lock.json ./
+COPY web/package.json web/package-lock.json ./
 RUN npm ci
 
 # Copy source and build
-COPY . .
+COPY web/ .
 RUN npm run build
 
 EXPOSE 3000
