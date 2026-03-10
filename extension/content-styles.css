@@ -1,0 +1,169 @@
+/* ==========================
+   RankFlow Content Script Styles
+   Injected onto TikTok, YouTube, and Instagram
+   ========================== */
+
+.rf-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  background: linear-gradient(135deg, #6C5CE7, #4A3ABF);
+  color: #fff !important;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 9999;
+  line-height: 1.2;
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+  white-space: nowrap;
+}
+
+.rf-save-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(108, 92, 231, 0.5);
+}
+
+.rf-save-btn.rf-saved {
+  background: linear-gradient(135deg, #00CEC9, #00B894);
+  cursor: default;
+  pointer-events: none;
+}
+
+.rf-save-btn.rf-saved:hover {
+  transform: none;
+}
+
+/* Floating toolbar at bottom of search pages */
+.rf-toolbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(19, 19, 31, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(108, 92, 231, 0.3);
+  border-radius: 16px;
+  z-index: 99999;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.rf-toolbar-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #6C5CE7, #00CEC9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.rf-toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: #3A3A52;
+  flex-shrink: 0;
+}
+
+.rf-sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 16px;
+  background: #1E1E2E;
+  color: #E4E4F0;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  border: 1px solid #3A3A52;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.rf-sort-btn:hover {
+  border-color: #6C5CE7;
+  background: #2A2A3E;
+}
+
+.rf-sort-btn.rf-active {
+  background: linear-gradient(135deg, #6C5CE7, #4A3ABF);
+  border-color: transparent;
+  color: white;
+}
+
+.rf-session-badge {
+  padding: 5px 12px;
+  background: rgba(0, 206, 201, 0.15);
+  color: #00CEC9;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* View count label on video cards */
+.rf-view-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #E4E4F0;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  border-radius: 6px;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Instagram floating save button */
+.rf-ig-save {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #6C5CE7, #4A3ABF);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  z-index: 99999;
+  box-shadow: 0 6px 25px rgba(108, 92, 231, 0.5);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rf-ig-save:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 30px rgba(108, 92, 231, 0.6);
+}
+
+.rf-ig-save.rf-saved {
+  background: linear-gradient(135deg, #00CEC9, #00B894);
+  cursor: default;
+  pointer-events: none;
+}
