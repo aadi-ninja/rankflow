@@ -49,14 +49,15 @@ export async function GET(request) {
         });
         const html = await embedRes.text();
 
-        // Search for .mp4 URLs in the embed HTML
-        const mp4Match = html.match(/(https?:\\\\\/\\\\\/[^"']+\.mp4[^"']*)/);
+        // Search for any .mp4 URL in the embed HTML
+        const mp4Match = html.match(/(https?:[^"']+\.mp4[^"']*)/);
         if (mp4Match) {
-          // Unescape the URL (embed page uses escaped slashes)
+          // Clean up the URL by removing escapes
           directUrl = mp4Match[1]
-            .replace(/\\\\\//g, "/")
             .replace(/\\u0026/g, "&")
-            .replace(/&amp;/g, "&");
+            .replace(/&amp;/g, "&")
+            .replace(/\\\//g, "/")
+            .replace(/\\\\/g, ""); // Remove any lingering backslashes
           console.log("[Download] Instagram via embed page OK");
         } else {
           throw new Error("Could not find video URL in Instagram embed page. Post may be an image or private.");
