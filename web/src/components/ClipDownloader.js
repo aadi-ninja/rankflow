@@ -122,21 +122,37 @@ export default function ClipDownloader() {
           `/api/download?url=${encodeURIComponent(clip.video_url)}`
         );
         if (res.ok) {
-          const blob = await res.blob();
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = `clip_${num}_${topicSlug}.mp4`;
-          document.body.appendChild(a);
-          a.click();
-          URL.revokeObjectURL(a.href);
-          a.remove();
-          successCount++;
+          const contentType = res.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            // Server returned an error as JSON
+            const err = await res.json();
+            console.error(`[Clip ${num}] Server error:`, err.error);
+            window.open(clip.video_url, "_blank");
+            failCount++;
+          } else {
+            const blob = await res.blob();
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `clip_${num}_${topicSlug}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(a.href);
+            a.remove();
+            successCount++;
+          }
         } else {
-          // Fallback: open in new tab
+          // Log the actual error from the server
+          try {
+            const errData = await res.json();
+            console.error(`[Clip ${num}] Download failed:`, errData.error);
+          } catch {
+            console.error(`[Clip ${num}] Download failed: HTTP ${res.status}`);
+          }
           window.open(clip.video_url, "_blank");
           failCount++;
         }
-      } catch {
+      } catch (fetchErr) {
+        console.error(`[Clip ${num}] Fetch error:`, fetchErr.message);
         window.open(clip.video_url, "_blank");
         failCount++;
       }
