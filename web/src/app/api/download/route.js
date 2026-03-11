@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { execSync } from "child_process";
-import { instagramGetUrl } from "instagram-url-direct";
 
 /**
  * API proxy to download videos from social media URLs.
@@ -33,35 +32,38 @@ export async function GET(request) {
     // --- Instagram: instagram-url-direct package ---
     else if (videoUrl.includes("instagram.com")) {
       try {
-        // Convert /p/ URLs to /reel/ if needed (the package prefers /reel/)
-        let igUrl = videoUrl;
-        const shortcodeMatch = videoUrl.match(/\/(p|reel)\/([A-Za-z0-9_-]+)/);
-        if (shortcodeMatch) {
-          igUrl = `https://www.instagram.com/reel/${shortcodeMatch[2]}/`;
+        // Extract shortcode from the Instagram URL
+        const shortcodeMatch = videoUrl.match(/\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
+        if (!shortcodeMatch) {
+          throw new Error("Could not extract Instagram shortcode from URL.");
         }
+        const shortcode = shortcodeMatch[2];
 
-        const result = await instagramGetUrl(igUrl);
+        // Fetch the embed page — this works from datacenter IPs unlike the main page
+        const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/`;
+        const embedRes = await fetch(embedUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          },
+        });
+        const html = await embedRes.text();
 
-        if (result && result.media_details && result.media_details.length > 0) {
-          // Find the first video entry
-          const video = result.media_details.find(m => m.type === "video");
-          if (video && video.url) {
-            directUrl = video.url;
-            console.log("[Download] Instagram via instagram-url-direct OK");
-          } else {
-            // Maybe it's an image post, use the first URL anyway
-            directUrl = result.media_details[0].url;
-            console.log("[Download] Instagram media (non-video) extracted");
-          }
-        } else if (result && result.url_list && result.url_list.length > 0) {
-          directUrl = result.url_list[0];
-          console.log("[Download] Instagram via url_list OK");
+        // Search for .mp4 URLs in the embed HTML
+        const mp4Match = html.match(/(https?:\\\\\/\\\\\/[^"']+\.mp4[^"']*)/);
+        if (mp4Match) {
+          // Unescape the URL (embed page uses escaped slashes)
+          directUrl = mp4Match[1]
+            .replace(/\\\\\//g, "/")
+            .replace(/\\u0026/g, "&")
+            .replace(/&amp;/g, "&");
+          console.log("[Download] Instagram via embed page OK");
         } else {
-          throw new Error("Could not extract Instagram video URL.");
+          throw new Error("Could not find video URL in Instagram embed page. Post may be an image or private.");
         }
       } catch (igErr) {
-        console.error("[Download] Instagram package failed:", igErr.message);
-        // Fallback: try yt-dlp
+        console.error("[Download] Instagram embed failed:", igErr.message);
+        // Fallback: try yt-dlp (works if running locally)
         try {
           const stdout = execSync(
             `yt-dlp --get-url -f "best[ext=mp4]/best" "${videoUrl}"`,
