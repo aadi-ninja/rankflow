@@ -9,13 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@distube/ytdl-core": "^4.16.12",
     "@supabase/supabase-js": "^2.99.0",
     "instagram-url-direct": "^2.0.7",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "youtube-dl-exec": "^3.1.3"
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
