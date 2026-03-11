@@ -4,8 +4,8 @@ import { execSync } from "child_process";
 /**
  * API proxy to download videos from social media URLs.
  * - TikTok:    Uses TikWM API (fast, no watermark)
- * - Instagram: Uses instagram-url-direct npm package
- * - YouTube:   Uses system yt-dlp (installed via pip in Docker)
+ * - Instagram: Uses system yt-dlp (installed via pip)
+ * - YouTube:   Uses system yt-dlp (installed via pip)
  */
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -24,71 +24,26 @@ export async function GET(request) {
       const json = await apiRes.json();
       if (json.data && json.data.play) {
         directUrl = json.data.play;
-        console.log("[Download] TikTok via TikWM OK");
+        console.log(`[Download] TikTok via TikWM OK`);
       } else {
         throw new Error("TikWM API failed to extract TikTok video.");
       }
     }
-    // --- Instagram: instagram-url-direct package ---
-    else if (videoUrl.includes("instagram.com")) {
+    // --- Instagram & YouTube: System yt-dlp ---
+    else if (videoUrl.includes("instagram.com") || videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) {
       try {
-        // Extract shortcode from the Instagram URL
-        const shortcodeMatch = videoUrl.match(/\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
-        if (!shortcodeMatch) {
-          throw new Error("Could not extract Instagram shortcode from URL.");
-        }
-        const shortcode = shortcodeMatch[2];
-
-        // Fetch the embed page — this works from datacenter IPs unlike the main page
-        const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/`;
-        const embedRes = await fetch(embedUrl, {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          },
-        });
-        const html = await embedRes.text();
-
-        // Search for any .mp4 URL in the embed HTML
-        const mp4Match = html.match(/(https?:[^"']+\.mp4[^"']*)/);
-        if (mp4Match) {
-          // Clean up the URL by removing escapes
-          directUrl = mp4Match[1]
-            .replace(/\\u0026/g, "&")
-            .replace(/&amp;/g, "&")
-            .replace(/\\\//g, "/")
-            .replace(/\\\\/g, ""); // Remove any lingering backslashes
-          console.log("[Download] Instagram via embed page OK");
-        } else {
-          throw new Error("Could not find video URL in Instagram embed page. Post may be an image or private.");
-        }
-      } catch (igErr) {
-        console.error("[Download] Instagram embed failed:", igErr.message);
-        // Fallback: try yt-dlp (works if running locally)
-        try {
-          const stdout = execSync(
-            `yt-dlp --get-url -f "best[ext=mp4]/best" "${videoUrl}"`,
-            { encoding: "utf-8", timeout: 30000 }
-          ).trim();
-          directUrl = stdout.split("\n")[0].trim();
-          console.log("[Download] Instagram via yt-dlp fallback OK");
-        } catch (ytErr) {
-          throw new Error(`Instagram download failed: ${igErr.message}`);
-        }
-      }
-    }
-    // --- YouTube: System yt-dlp ---
-    else if (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) {
-      try {
+        // Use system yt-dlp to get the direct video URL
         const stdout = execSync(
           `yt-dlp --get-url -f "best[ext=mp4]/best" "${videoUrl}"`,
           { encoding: "utf-8", timeout: 30000 }
         ).trim();
+
+        // yt-dlp may return multiple lines (video + audio); take the first
         directUrl = stdout.split("\n")[0].trim();
-        console.log(`[Download] YouTube via yt-dlp OK`);
+        console.log(`[Download] yt-dlp extracted: ${directUrl.substring(0, 60)}...`);
       } catch (ytErr) {
         console.error("[Download] yt-dlp failed:", ytErr.stderr || ytErr.message);
-        throw new Error(`YouTube download failed: ${ytErr.stderr || ytErr.message}`);
+        throw new Error(`yt-dlp extraction failed: ${ytErr.stderr || ytErr.message}`);
       }
     }
 
@@ -97,11 +52,7 @@ export async function GET(request) {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": videoUrl.includes("tiktok.com")
-          ? "https://www.tiktok.com/"
-          : videoUrl.includes("instagram.com")
-          ? "https://www.instagram.com/"
-          : videoUrl,
+        "Referer": videoUrl.includes("tiktok.com") ? "https://www.tiktok.com/" : videoUrl,
       },
     });
 
