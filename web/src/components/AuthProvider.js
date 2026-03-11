@@ -48,7 +48,10 @@ export default function AuthProvider({ children }) {
         redirectTo: window.location.origin,
       },
     });
-    if (error) console.error("Login error:", error.message);
+    if (error) {
+      console.error("Login error:", error.message);
+      alert("Login Error: " + error.message);
+    }
   }
 
   async function signOut() {

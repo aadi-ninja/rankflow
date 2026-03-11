@@ -35,7 +35,7 @@ export async function GET(request) {
         // Use system yt-dlp to get the direct video URL
         const stdout = execSync(
           `yt-dlp --get-url -f "best[ext=mp4]/best" "${videoUrl}"`,
-          { encoding: "utf-8", timeout: 45000 }
+          { encoding: "utf-8", timeout: 30000 }
         ).trim();
 
         // yt-dlp may return multiple lines (video + audio); take the first
