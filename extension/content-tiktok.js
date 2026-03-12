@@ -222,11 +222,69 @@
 
       const title = document.querySelector('[data-e2e="browse-video-desc"]')?.textContent?.trim() || document.title || "Untitled TikTok";
       
-      // Extract thumbnail from the fullscreen video player
-      const videoEl = document.querySelector("video");
-      const thumbnailUrl = videoEl?.getAttribute("poster") || 
-                           document.querySelector('meta[property="og:image"]')?.content || 
-                           "";
+      // Extract thumbnail from the fullscreen video player by finding the active video
+      let videoEl = null;
+      const videos = Array.from(document.querySelectorAll("video"));
+      if (videos.length === 1) {
+        videoEl = videos[0];
+      } else if (videos.length > 1) {
+        let maxArea = 0;
+        const vh = window.innerHeight || document.documentElement.clientHeight;
+        const vw = window.innerWidth || document.documentElement.clientWidth;
+        for (const v of videos) {
+          const rect = v.getBoundingClientRect();
+          const visW = Math.max(0, Math.min(rect.right, vw) - Math.max(rect.left, 0));
+          const visH = Math.max(0, Math.min(rect.bottom, vh) - Math.max(rect.top, 0));
+          const area = visW * visH;
+          if (area > maxArea) { maxArea = area; videoEl = v; }
+        }
+        if (!videoEl) videoEl = videos[0];
+      }
+      
+      let thumbnailUrl = "";
+      
+      // 1. Check the video poster attribute (rarely set by TikTok but best if exists)
+      if (videoEl) {
+        thumbnailUrl = videoEl.getAttribute("poster") || "";
+      }
+      
+      // 2. Find the actual <img> poster inside the video player container
+      //    TikTok uses <img> tags with tiktokcdn URLs as video posters, not the video[poster] attr
+      if (!thumbnailUrl && videoEl) {
+        const playerContainer = videoEl.closest('[class*="DivPlayerContainer"], [class*="PlayerContainer"], [class*="VideoContainer"]') || videoEl.parentElement?.parentElement;
+        if (playerContainer) {
+          const posterImgs = Array.from(playerContainer.querySelectorAll("img")).filter(img =>
+            img.src && (img.src.includes("tiktokcdn") || img.src.includes("-sign")) && !img.src.includes("avt-") && img.width > 50
+          );
+          if (posterImgs.length > 0) thumbnailUrl = posterImgs[0].src;
+        }
+      }
+      
+      // 3. Check for TikTok's custom .ttplayer-poster div with background-image
+      if (!thumbnailUrl) {
+        const ttPoster = document.querySelector(".ttplayer-poster");
+        if (ttPoster) {
+          const bgStyle = ttPoster.style.backgroundImage || window.getComputedStyle(ttPoster).backgroundImage;
+          const bgMatch = bgStyle?.match(/url\(["']?(.+?)["']?\)/);
+          if (bgMatch && bgMatch[1]) thumbnailUrl = bgMatch[1];
+        }
+      }
+      
+      // 4. Fallback: any large img on the page with a tiktokcdn URL
+      if (!thumbnailUrl) {
+        const allImgs = Array.from(document.querySelectorAll("img")).filter(img =>
+          img.src && (img.src.includes("tiktokcdn") || img.src.includes("-sign")) && !img.src.includes("avt-") && !img.src.includes("100:100")
+        );
+        if (allImgs.length > 0) thumbnailUrl = allImgs[0].src;
+      }
+      
+      // 5. Last resort: og:image meta tag
+      if (!thumbnailUrl) {
+        const ogImage = document.querySelector('meta[property="og:image"]')?.content || "";
+        if (ogImage && !ogImage.includes("logo")) {
+          thumbnailUrl = ogImage;
+        }
+      }
       
       // Try to find views in the sidebar, or default to 0
       const viewText = document.querySelector('[data-e2e="browse-like-count"]')?.textContent || "0";
@@ -274,8 +332,8 @@
     if (cardEl.querySelector(".rf-save-btn")) return;
 
     let link =
-      cardEl.querySelector("a[href*='/@']") ||
       cardEl.querySelector("a[href*='/video/']") ||
+      cardEl.querySelector("a[href*='/@']") ||
       cardEl.querySelector("a");
       
     // If it's a fullscreen TikTok player or feed, grab URL from the window
@@ -341,8 +399,12 @@
       
       // Extract thumbnail from card image or video poster
       const tempVideo = cardEl.querySelector("video");
-      const tempImg = cardEl.querySelector("img");
-      const thumbnailUrl = tempVideo?.getAttribute("poster") || tempImg?.src || "";
+      const possibleImgs = Array.from(cardEl.querySelectorAll("img")).filter(img =>
+        img.src && !img.src.includes("avt-") && !img.src.includes("100:100")
+      );
+      // Prioritize large poster images with tiktokcdn URLs (the actual video cover)
+      const posterImg = possibleImgs.find(img => img.src && (img.src.includes("-sign") || img.src.includes("tiktokcdn")) && img.width > 50);
+      const thumbnailUrl = tempVideo?.getAttribute("poster") || posterImg?.src || possibleImgs[0]?.src || "";
 
       btn.textContent = "⏳ Saving...";
       btn.disabled = true;

@@ -38,6 +38,30 @@ function sanitizeName(str) {
     .substring(0, 40);
 }
 
+function Thumbnail({ url, platform }) {
+  const [error, setError] = useState(false);
+
+  if (!url || error) {
+    return (
+      <div className="w-16 h-24 rounded flex-shrink-0 bg-[var(--color-surface-lighter)] flex items-center justify-center shadow-inner">
+        <span className="text-xl opacity-30">{platform?.toLowerCase().includes("youtube") ? "▶️" : "🎬"}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-16 h-24 rounded overflow-hidden flex-shrink-0 bg-black flex items-center justify-center relative shadow-md">
+      <img
+        src={url}
+        alt="thumb"
+        referrerPolicy="no-referrer"
+        className="w-full h-full object-cover opacity-90 transition-opacity duration-300"
+        onError={() => setError(true)}
+      />
+    </div>
+  );
+}
+
 export default function ClipDownloader() {
   const { user } = useAuth();
   const [sessions, setSessions] = useState([]);
@@ -62,7 +86,6 @@ export default function ClipDownloader() {
         .from("sessions")
         .select("*, clips(count)")
         .eq("user_id", user.id)
-        .eq("status", "ended")
         .order("created_at", { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -290,7 +313,10 @@ export default function ClipDownloader() {
                       <h3 className="font-semibold">{session.topic_name}</h3>
                       <p className="text-xs text-[var(--color-text-muted)]">
                         {formatDate(session.created_at)} • {clipCount} clip
-                        {clipCount !== 1 ? "s" : ""}
+                        {clipCount !== 1 ? "s" : ""} •{" "}
+                        <span className={session.status === "active" ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}>
+                          {session.status === "active" ? "● Active" : "Ended"}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -356,25 +382,7 @@ export default function ClipDownloader() {
                               {String(j + 1).padStart(2, "0")}
                             </span>
                             
-                            {/* Thumbnail */}
-                            {clip.thumbnail_url ? (
-                              <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0 bg-black flex items-center justify-center relative shadow-md">
-                                <img 
-                                  src={clip.thumbnail_url} 
-                                  alt="thumb" 
-                                  className="w-full h-full object-cover opacity-90"
-                                  onError={(e) => {
-                                    e.target.onerror = null; 
-                                    e.target.style.display = 'none';
-                                    e.target.parentElement.innerHTML = '<span class="text-xs opacity-50">🎥</span>';
-                                  }}
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-12 h-16 rounded flex-shrink-0 bg-[var(--color-surface-lighter)] flex items-center justify-center shadow-inner">
-                                <span className="text-xs opacity-50">🎥</span>
-                              </div>
-                            )}
+                            <Thumbnail url={clip.thumbnail_url} platform={clip.platform} />
 
                             {platformTag(clip.platform)}
                             
@@ -393,7 +401,7 @@ export default function ClipDownloader() {
                             </div>
                             
                             <span className="text-xs text-[var(--color-text-muted)] tabular-nums whitespace-nowrap bg-[var(--color-surface-lighter)] px-2 py-1 rounded-md">
-                              {formatNumber(clip.view_count)} views
+                              {formatNumber(clip.view_count)} {clip.platform?.toLowerCase().includes("instagram") ? "likes" : "views"}
                             </span>
                           </div>
                         ))}

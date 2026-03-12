@@ -62,6 +62,28 @@ function extractTopic(title) {
     .join(" ");
 }
 
+function Thumbnail({ url, platform }) {
+  const [error, setError] = useState(false);
+
+  if (!url || error) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-4xl bg-[var(--color-surface-lighter)] shadow-inner">
+        {platform?.toLowerCase().includes("youtube") ? "▶️" : "🎬"}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={url}
+      alt="thumb"
+      referrerPolicy="no-referrer"
+      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+      onError={() => setError(true)}
+    />
+  );
+}
+
 function formatNumber(num) {
   if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(1) + "B";
   if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
@@ -105,7 +127,7 @@ export default function IdeaFinder() {
     try {
       const saved = localStorage.getItem("rf_idea_history");
       if (saved) setHistory(JSON.parse(saved));
-    } catch {}
+    } catch { }
   }, []);
 
   // Load API key from Supabase settings
@@ -341,7 +363,7 @@ export default function IdeaFinder() {
               <>🚀 Find Ideas</>
             )}
           </button>
-          
+
           {history.length > 0 && (
             <button
               onClick={() => setShowHistory(!showHistory)}
@@ -360,13 +382,13 @@ export default function IdeaFinder() {
               <h3 className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
                 Recent Searches (Saved Locally)
               </h3>
-              <button 
+              <button
                 onClick={() => {
-                   if(confirm("Clear all history?")) {
-                      localStorage.removeItem("rf_idea_history");
-                      setHistory([]);
-                      setShowHistory(false);
-                   }
+                  if (confirm("Clear all history?")) {
+                    localStorage.removeItem("rf_idea_history");
+                    setHistory([]);
+                    setShowHistory(false);
+                  }
                 }}
                 className="text-xs text-[var(--color-danger)] hover:underline"
               >
@@ -549,15 +571,7 @@ export default function IdeaFinder() {
                   >
                     {/* Thumbnail */}
                     <div className="relative aspect-video overflow-hidden bg-[var(--color-surface)]">
-                      {video.thumbnail ? (
-                        <img
-                          src={video.thumbnail}
-                          alt={video.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-4xl">🎬</div>
-                      )}
+                      <Thumbnail url={video.thumbnail} platform="YouTube" />
                       {/* VPH badge */}
                       <div className="absolute top-2 right-2 bg-[rgba(0,0,0,0.8)] backdrop-blur-sm px-2.5 py-1 rounded-lg">
                         <span className="text-xs font-bold text-[var(--color-accent)]">
