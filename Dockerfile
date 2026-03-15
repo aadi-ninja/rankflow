@@ -20,5 +20,8 @@ ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 RUN npm run build
 
+# Create startup script that auto-updates yt-dlp before starting the app
+RUN printf '#!/bin/sh\necho "Updating yt-dlp..."\npip3 install -U yt-dlp --break-system-packages --quiet 2>/dev/null || true\necho "yt-dlp version: $(yt-dlp --version)"\nexec npm start\n' > /app/start.sh && chmod +x /app/start.sh
+
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["/app/start.sh"]
